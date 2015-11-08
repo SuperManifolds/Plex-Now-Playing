@@ -6,9 +6,17 @@
 	objectVersion = 46;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FA70C6311BEE9BE200DBF0E3 /* Plex.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA70C6301BEE9BE200DBF0E3 /* Plex.swift */; };
+		FA70C6331BEEAD2100DBF0E3 /* Preferences.xib in Resources */ = {isa = PBXBuildFile; fileRef = FA70C6321BEEAD2100DBF0E3 /* Preferences.xib */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		FA70C6261BEE9BC300DBF0E3 /* Plex Now Playing.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Plex Now Playing.bundle"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA70C6291BEE9BC300DBF0E3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FA70C62F1BEE9BE200DBF0E3 /* Plex Now Playing-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Plex Now Playing-Bridging-Header.h"; sourceTree = "<group>"; };
+		FA70C6301BEE9BE200DBF0E3 /* Plex.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Plex.swift; sourceTree = "<group>"; };
+		FA70C6321BEEAD2100DBF0E3 /* Preferences.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = Preferences.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -25,8 +33,11 @@
 		FA70C61D1BEE9BC300DBF0E3 = {
 			isa = PBXGroup;
 			children = (
+				FA70C6321BEEAD2100DBF0E3 /* Preferences.xib */,
+				FA70C6301BEE9BE200DBF0E3 /* Plex.swift */,
 				FA70C6281BEE9BC300DBF0E3 /* Plex Now Playing */,
 				FA70C6271BEE9BC300DBF0E3 /* Products */,
+				FA70C62F1BEE9BE200DBF0E3 /* Plex Now Playing-Bridging-Header.h */,
 			);
 			sourceTree = "<group>";
 		};
@@ -72,6 +83,7 @@
 		FA70C61E1BEE9BC300DBF0E3 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 0710;
 				LastUpgradeCheck = 0710;
 				ORGANIZATIONNAME = "Alex S. Glomsaas";
 				TargetAttributes = {
@@ -102,6 +114,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA70C6331BEEAD2100DBF0E3 /* Preferences.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +125,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA70C6311BEE9BE200DBF0E3 /* Plex.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -200,12 +214,20 @@
 		FA70C62D1BEE9BC300DBF0E3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = /Applications/Textual.app/Contents/MacOS/Textual;
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
+				FRAMEWORK_SEARCH_PATHS = /Applications/Textual.app/Contents/Frameworks;
+				HEADER_SEARCH_PATHS = "\"/Applications/Textual.app/Contents/Headers/**\"";
 				INFOPLIST_FILE = "Plex Now Playing/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sorlie.Plex-Now-Playing";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Plex Now Playing-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				WRAPPER_EXTENSION = bundle;
 			};
 			name = Debug;
@@ -213,12 +235,19 @@
 		FA70C62E1BEE9BC300DBF0E3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = /Applications/Textual.app/Contents/MacOS/Textual;
+				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
+				FRAMEWORK_SEARCH_PATHS = /Applications/Textual.app/Contents/Frameworks;
+				HEADER_SEARCH_PATHS = "\"/Applications/Textual.app/Contents/Headers/**\"";
 				INFOPLIST_FILE = "Plex Now Playing/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.sorlie.Plex-Now-Playing";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Plex Now Playing-Bridging-Header.h";
 				WRAPPER_EXTENSION = bundle;
 			};
 			name = Release;
