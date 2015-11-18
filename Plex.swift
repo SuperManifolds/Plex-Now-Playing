@@ -153,20 +153,12 @@ class Plex: NSViewController, THOPluginProtocol {
         let defaults = NSUserDefaults.standardUserDefaults()
         
         self.plexHostnameField.stringValue = defaults.stringForKey("plexHostname")!
-        if let hostValidationCell = self.plexHostnameField.cell as? TVCTextFieldWithValueValidationCell {
-            hostValidationCell.parentField = self.plexHostnameField
-        }
-        
         self.plexHostnameField.validationBlock = {(currentValue: String!) -> Bool in
             return NSString(string: currentValue).validInternetAddress
         }
         
         
         self.plexPortfield.stringValue = String(defaults.integerForKey("plexPort"))
-        if let portValidationCell = self.plexPortfield.cell as? TVCTextFieldWithValueValidationCell {
-            portValidationCell.parentField = self.plexPortfield
-        }
-        
         self.plexPortfield.validationBlock = {(currentValue: String!) -> Bool in
             if let number = Int(currentValue) {
                 return currentValue.characters.count < 7 && number > 1
