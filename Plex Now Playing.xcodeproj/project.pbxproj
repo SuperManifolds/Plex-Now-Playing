@@ -83,6 +83,9 @@
 		FA70C61E1BEE9BC300DBF0E3 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				KnownAssetTags = (
+					Resources,
+				);
 				LastSwiftUpdateCheck = 0710;
 				LastUpgradeCheck = 0710;
 				ORGANIZATIONNAME = "Alex S. Glomsaas";
@@ -271,6 +274,7 @@
 				FA70C62E1BEE9BC300DBF0E3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

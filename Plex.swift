@@ -33,8 +33,12 @@ import Foundation
 
 class Plex: NSViewController, THOPluginProtocol {
     @IBOutlet var preferences: NSView!
-    @IBOutlet var plexHostnameField: NSTextField!
-    @IBOutlet var plexPortfield: NSTextField!
+    @IBOutlet var plexHostnameField: TVCTextFieldWithValueValidation!
+    @IBOutlet var plexPortfield: TVCTextFieldWithValueValidation!
+    @IBOutlet var plexPreferredClient: NSPopUpButton!
+    @IBOutlet var plexPreferredClientRefreshButton: NSButton!
+    
+    var availableClients = Dictionary<String, String>()
     
     required override init?(nibName nibNameOrNil: String?, bundle nibBundleOrNil: NSBundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
@@ -59,7 +63,8 @@ class Plex: NSViewController, THOPluginProtocol {
     func pluginLoadedIntoMemory() {
         let defaults: [String : AnyObject] = [
             "plexHostname": "127.0.0.1",
-            "plexPort": 32400
+            "plexPort": 32400,
+            "plexPreferredClient": ""
         ]
         NSUserDefaults.standardUserDefaults().registerDefaults(defaults)
         
@@ -75,7 +80,6 @@ class Plex: NSViewController, THOPluginProtocol {
         let host = defaults.stringForKey("plexHostname")!
         let port = defaults.integerForKey("plexPort")
         
-        NSLog("http://\(host):\(port)/status/sessions")
         
         if let requestUrl = NSURL(string: "http://\(host):\(port)/status/sessions") {
             let config = NSURLSessionConfiguration.defaultSessionConfiguration()
@@ -91,49 +95,52 @@ class Plex: NSViewController, THOPluginProtocol {
                     /* Attempt to serialise the JSON results into a dictionary. */
                     let root = try NSJSONSerialization.JSONObjectWithData(data!, options: NSJSONReadingOptions.AllowFragments) as! Dictionary<String, AnyObject>
                     let sessions = root["_children"] as! [Dictionary<String, AnyObject>]
-                    if sessions.count > 0 {
-                        let video = sessions[0]
-                        let type = video["type"] as! String
-                        let elements = video["_children"] as! [Dictionary<String, AnyObject>]
+                    
+                    for session in sessions {
+                        let elements = session["_children"] as! [Dictionary<String, AnyObject>]
                         
-                        var isPaused = false
                         for element in elements {
                             if element["_elementType"] as? String == "Player" {
-                                let state = element["state"] as? String
-                                isPaused = state == "paused"
+                                let identifier = element["machineIdentifier"] as! String
+                                if identifier == defaults.stringForKey("plexPreferredClient") || sessions.count == 1 {
+                                    let state = element["state"] as? String
+                                    let isPaused = state == "paused"
+                                    
+                                    let type = session["type"] as! String
+                                    
+                                    switch type {
+                                    case "episode":
+                                        let showName      = session["grandparentTitle"] as! String
+                                        let episodeTitle  = session["title"]            as! String
+                                        let seasonNumber  = session["parentIndex"]      as! String
+                                        let episodeNumber = session["index"]            as! String
+                                        
+                                        if isPaused {
+                                            client.sendAction("is currently watching \(showName) Season \(seasonNumber) Episode \(episodeNumber) \"\(episodeTitle)\" on Plex (Paused)", toChannel: currentChannelAtActivation)
+                                        } else {
+                                            client.sendAction("is currently watching \(showName) Season \(seasonNumber) Episode \(episodeNumber) \"\(episodeTitle)\" on Plex", toChannel: currentChannelAtActivation)
+                                        }
+                                        
+                                    case "movie":
+                                        let title  = session["title"]  as! String
+                                        let studio = session["studio"] as! String
+                                        let year   = session["year"]   as! String
+                                        
+                                        if isPaused {
+                                            client.sendAction("is currently watching \(title) (\(year)) by \(studio) on Plex (Paused)", toChannel: currentChannelAtActivation)
+                                        } else {
+                                            client.sendAction("is currently watching \(title) (\(year)) by \(studio) on Plex", toChannel: currentChannelAtActivation)
+                                        }
+                                        
+                                    default:
+                                        client.printDebugInformation("The format of the currently playing item on Plex is not currently supported.")
+                                    }
+                                    return
+                                }
                             }
                         }
-                        
-                        switch type {
-                        case "episode":
-                            let showName      = video["grandparentTitle"] as! String
-                            let episodeTitle  = video["title"]            as! String
-                            let seasonNumber  = video["parentIndex"]      as! String
-                            let episodeNumber = video["index"]            as! String
-                            
-                            if isPaused {
-                                client.sendAction("is currently watching \(showName) Season \(seasonNumber) Episode \(episodeNumber) \"\(episodeTitle)\" on Plex (Paused)", toChannel: currentChannelAtActivation)
-                            } else {
-                                client.sendAction("is currently watching \(showName) Season \(seasonNumber) Episode \(episodeNumber) \"\(episodeTitle)\" on Plex", toChannel: currentChannelAtActivation)
-                            }
-                        case "movie":
-                            let title  = video["title"]  as! String
-                            let studio = video["studio"] as! String
-                            let year   = video["year"]   as! String
-                            
-                            if isPaused {
-                                client.sendAction("is currently watching \(title) (\(year)) by \(studio) on Plex (Paused)", toChannel: currentChannelAtActivation)
-                            } else {
-                                client.sendAction("is currently watching \(title) (\(year)) by \(studio) on Plex", toChannel: currentChannelAtActivation)
-                            }
-                            
-                        default:
-                            client.printDebugInformation("The format of the currently playing item on Plex is not currently supported.")
-                        }
-                    } else {
-                        client.printDebugInformation("You are not currently playing anything.")
                     }
-                    
+                    client.printDebugInformation("You are not currently playing anything.")
                 } catch {
                     return
                 }
@@ -143,27 +150,120 @@ class Plex: NSViewController, THOPluginProtocol {
     }
     
     override func viewDidAppear() {
-        let formatter = self.plexPortfield.formatter as! NSNumberFormatter
-        formatter.generatesDecimalNumbers = false
-        formatter.maximumFractionDigits = 0
+        let defaults = NSUserDefaults.standardUserDefaults()
         
-        let defaults = NSUserDefaults.standardUserDefaults()
         self.plexHostnameField.stringValue = defaults.stringForKey("plexHostname")!
+        if let hostValidationCell = self.plexHostnameField.cell as? TVCTextFieldWithValueValidationCell {
+            hostValidationCell.parentField = self.plexHostnameField
+        }
+        
+        self.plexHostnameField.validationBlock = {(currentValue: String!) -> Bool in
+            return NSString(string: currentValue).validInternetAddress
+        }
+        
+        
         self.plexPortfield.stringValue = String(defaults.integerForKey("plexPort"))
+        if let portValidationCell = self.plexPortfield.cell as? TVCTextFieldWithValueValidationCell {
+            portValidationCell.parentField = self.plexPortfield
+        }
+        
+        self.plexPortfield.validationBlock = {(currentValue: String!) -> Bool in
+            if let number = Int(currentValue) {
+                return currentValue.characters.count < 7 && number > 1
+            }
+            return false
+        }
+        
+        self.populatePlaceHolderMenuItem()
+        self.populateClientList()
     }
     
-    
-    @IBAction func plexHostnameFieldChanged(sender: NSTextField) {
+    func populateClientList() {
         let defaults = NSUserDefaults.standardUserDefaults()
-        defaults.setValue(sender.stringValue, forKey: "plexHostname")
-        defaults.synchronize()
+        let host = defaults.stringForKey("plexHostname")!
+        let port = defaults.integerForKey("plexPort")
+        if let requestUrl = NSURL(string: "http://\(host):\(port)/status/sessions") {
+            let config = NSURLSessionConfiguration.defaultSessionConfiguration()
+            config.HTTPAdditionalHeaders = ["Accept": "application/json"]
+            
+            let session = NSURLSession(configuration: config)
+            session.dataTaskWithURL(requestUrl, completionHandler: {(data : NSData?, response: NSURLResponse?, error: NSError?) -> Void in
+                guard data != nil else {
+                    return
+                }
+                
+                do {
+                    /* Attempt to serialise the JSON results into a dictionary. */
+                    let root = try NSJSONSerialization.JSONObjectWithData(data!, options: NSJSONReadingOptions.AllowFragments) as! Dictionary<String, AnyObject>
+                    let sessions = root["_children"] as! [Dictionary<String, AnyObject>]
+                    
+                    self.availableClients.removeAll()
+                    
+                    for session in sessions {
+                        let elements = session["_children"] as! [Dictionary<String, AnyObject>]
+                        for element in elements {
+                            if element["_elementType"] as? String == "Player" {
+                                let identifier = element["machineIdentifier"] as! String
+                                let name = element["title"] as! String
+                                let platform = element["platform"] as! String
+                                
+                                self.availableClients["\(name) (\(platform))"] = identifier
+                            }
+                        }
+                    }
+                    if self.availableClients.count > 0 {
+                        self.plexPreferredClient.removeAllItems()
+                        self.plexPreferredClient.enabled = true
+                        self.plexPreferredClient.addItemsWithTitles(Array(self.availableClients.keys))
+                    }
+                } catch {
+                    return
+                }
+                
+            }).resume()
+        }
     }
     
-    @IBAction func plexPortFieldChanged(sender: NSTextField) {
-        if let portNumber = Int(sender.stringValue) {
+    func populatePlaceHolderMenuItem() {
+        let placeholder = NSMenuItem()
+        placeholder.title = "No clients found"
+        placeholder.enabled = false
+        self.plexPreferredClient.menu?.addItem(placeholder)
+        self.plexPreferredClient.enabled = false
+    }
+    
+    
+    @IBAction func plexHostnameFieldChanged(sender: TVCTextFieldWithValueValidation) {
+        if sender.valueIsValid {
             let defaults = NSUserDefaults.standardUserDefaults()
-            defaults.setInteger(portNumber, forKey: "plexPort")
+            defaults.setValue(sender.stringValue, forKey: "plexHostname")
             defaults.synchronize()
         }
+    }
+    
+    @IBAction func plexPortFieldChanged(sender: TVCTextFieldWithValueValidation) {
+        if sender.valueIsValid {
+            if let portNumber = Int(sender.stringValue) {
+                let defaults = NSUserDefaults.standardUserDefaults()
+                defaults.setInteger(portNumber, forKey: "plexPort")
+                defaults.synchronize()
+            }
+        }
+    }
+    
+    
+    @IBAction func plexPreferredClientChange(sender: NSPopUpButton) {
+        guard sender.titleOfSelectedItem != nil else {
+            return
+        }
+        
+        if let machineId = self.availableClients[sender.titleOfSelectedItem!] {
+            let defaults = NSUserDefaults.standardUserDefaults()
+            defaults.setValue(machineId, forKey: "plexPreferredClient")
+        }
+    }
+    
+    @IBAction func plexPreferredClientRefresh(sender: NSButton) {
+        populateClientList()
     }
 }
